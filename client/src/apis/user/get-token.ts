@@ -7,7 +7,8 @@ const path = '/auth/kakao/login';
 export const getToken = async (authCode: string, ctx: GetServerSidePropsContext) => {
     try {
         const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_SERVER}${path}?code=${authCode}`
+            // `${process.env.NEXT_PUBLIC_API_SERVER}${path}?code=${authCode}`
+            `${process.env.NEXT_PUBLIC_API_SERVER}/auth/test/login/46` // 46: teacher, 47: student
         );
         const { accessToken, refreshToken } = res.data;
         setCookie('accessToken', accessToken, ctx);

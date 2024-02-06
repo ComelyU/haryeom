@@ -1,43 +1,56 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useLayoutEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import HomeLayout from '@/components/layouts/HomeLayout';
 import { IUserInfo, IUserRole } from '@/apis/user/user';
 import axios from 'axios';
+import Modal from '@/components/commons/Modal';
 import { useRecoilValue } from 'recoil';
 import userSessionAtom from '@/recoil/atoms/userSession';
 import router from 'next/router';
+import UploadProfileImage from '@/components/UploadProfileImage';
+import { subjectDefaultOptions } from '@/components/FilterOpenTeacherList/filterDefaultOptions';
+import { useModal } from '@/hooks/useModal';
 
 const path = '/members';
 const Mypage = () => {
     const userSession = useRecoilValue(userSessionAtom);
+    const { open, openModal, closeModal } = useModal();
 
     const [name, setName] = useState<number>(1);
     const [profile, setProfile] = useState<any>({
-        name: '김태윤',
-        school: '싸피중학교',
-        grade: '중학교 2학년',
-        phone: '01012345678',
-        profileUrl: '/images/student-boy.png',
-        college: '싸피대학교', // 여기부터 선생님의 정보
-        collegeEmail: 'taeyun@ssafy.ac.kr',
+        name: '',
+        school: '',
+        grade: '',
+        phone: '',
+        profileUrl: '',
+        college: '', // 여기부터 선생님의 정보
+        collegeEmail: '',
         profileStatus: false,
-        gender: 'MALE',
-        salary: 999,
-        career: 99,
-        subjects: [
-            { id: 1, name: '수학' },
-            { id: 2, name: '과학' },
-        ],
-        introduce:
-            'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry',
+        gender: '',
+        salary: 0,
+        career: 0,
+        subjects: [],
+        introduce: '',
     }); // role에 따라서 student 담거나, teacher 담거나
 
     const [role, setRole] = useState<IUserRole>(); // STUDENT or TEACHER
     useEffect(() => {
-        setRole('TEACHER');
-        // const result = axios.get<IUserInfo>(`${process.env.NEXT_PUBLIC_API_SERVER}${path}/${userSession?.role.toLocaleLowerCase()}s/${userSession?.memberId}`)
-        // setProfile(result);
+        console.log(profile);
+    }, [profile]);
+
+    useEffect(() => {
+        setRole(userSession?.role);
+        axios
+            .get<IUserInfo>(
+                `${process.env.NEXT_PUBLIC_API_SERVER}${path}/${userSession?.role.toLocaleLowerCase()}s/${userSession?.memberId}`,
+                {
+                    withCredentials: true,
+                }
+            )
+            .then((res) => {
+                setProfile(res.data);
+            });
     }, []); // 최초 렌더링 직후에만 실행
 
     const subject = () => {
@@ -70,9 +83,85 @@ const Mypage = () => {
         else return false;
     };
 
-    const submit = () => {};
+    const changeProfile = (e) => {
+        setProfile((prev: any) => {
+            return {
+                ...prev,
+                [e.target.name]: e.target.value,
+            };
+        });
+    };
 
-    return (
+    const changeProfileStatus = function (profileStatus: boolean) {
+        setProfile((prev: any) => {
+            return {
+                ...prev,
+                profileStatus: profileStatus,
+            };
+        });
+    };
+
+    const isSelected = function (isSelected: boolean) {
+        if (profile.profileStatus != isSelected) return '';
+        else return 'selected';
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateUserInfo = (name: string, value: any) => {
+        setProfile({
+            ...profile,
+            [name]: value,
+        });
+    };
+
+    const changeSubject = function (subjectInfo: { subjectId: number; name: string }) {
+        //예상 결과: subjectId 아닌거
+        const updatedSubjects = profile.subjects.filter(
+            (subject: any) => subject.subjectId !== subjectInfo.subjectId
+        );
+        //겹치는게 없는 경우 추가
+        if (updatedSubjects.length === profile.subjects.length) {
+            if (updatedSubjects.length === 3) {
+                alert('가르칠 과목은 최대 3개까지 지정할 수 있습니다.');
+            } else updatedSubjects.push(subjectInfo);
+        }
+        setProfile((prev: any) => ({
+            ...prev,
+            subjects: updatedSubjects,
+        }));
+        console.log(updatedSubjects.length);
+    };
+
+    const submit = () => {
+        console.log(profile);
+    };
+
+    const subjectList = () => {
+        const result = [];
+        // for (let i = 0; i < profile.subjects.length; i++) {
+        //     result.push(<span key={i}>{profile.subjects[i].name}</span>);
+        // }
+        subjectDefaultOptions.map((subject: string, i: number) => {
+            result.push(
+                <span
+                    key={i}
+                    onClick={() => changeSubject({ subjectId: i + 1, name: subject })}
+                    className={
+                        profile.subjects.some(
+                            (sub: any) => sub.subjectId === i + 1 && sub.name === subject
+                        )
+                            ? 'isSelected'
+                            : ''
+                    }
+                >
+                    {i + 1}. {subject}
+                </span>
+            );
+        });
+        return result;
+    };
+
+    return profile.profileUrl != '' ? (
         <HomeLayout>
             <StyledMypage>
                 <InfoBox>
@@ -85,7 +174,10 @@ const Mypage = () => {
                         </SubInfoHeader>
                         <RequiredInfo>
                             <ProfileImg>
-                                <img src={profile.profileUrl} />
+                                <UploadProfileImage
+                                    defaultImage={profile.profileUrl}
+                                    handleImageChange={(file) => updateUserInfo('profileImg', file)}
+                                />
                             </ProfileImg>
                             <ProfileInfo>
                                 <InfoName>
@@ -97,12 +189,21 @@ const Mypage = () => {
                                 </InfoName>
                                 <InfoContent>
                                     <div>
-                                        <input type="text" name="name" value={profile.name} />
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={profile.name}
+                                            onChange={changeProfile}
+                                        />
                                     </div>
                                     {isStudent() && (
                                         <div>
-                                            <input type="text" name="grade" value={profile.grade} />{' '}
-                                            select
+                                            <input
+                                                type="text"
+                                                name="grade"
+                                                value={profile.grade}
+                                                onChange={changeProfile}
+                                            />
                                         </div>
                                     )}
                                     {isStudent() && (
@@ -111,12 +212,18 @@ const Mypage = () => {
                                                 type="text"
                                                 name="school"
                                                 value={profile.school}
+                                                onChange={changeProfile}
                                             />
                                         </div>
                                     )}
                                     {isTeacher() && <div>{profile.college}</div>}
                                     <div>
-                                        <input type="text" name="phone" value={profile.phone} />
+                                        <input
+                                            type="text"
+                                            name="phone"
+                                            value={profile.phone}
+                                            onChange={changeProfile}
+                                        />
                                     </div>
                                 </InfoContent>
                             </ProfileInfo>
@@ -131,8 +238,18 @@ const Mypage = () => {
                                 <TeacherInfo>
                                     <div className="infoName">프로필 공개 여부</div>
                                     <div>
-                                        <span>공개</span>
-                                        <span>비공개</span>
+                                        <span
+                                            onClick={() => changeProfileStatus(true)}
+                                            className={isSelected(true)}
+                                        >
+                                            공개
+                                        </span>
+                                        <span
+                                            onClick={() => changeProfileStatus(false)}
+                                            className={isSelected(false)}
+                                        >
+                                            비공개
+                                        </span>
                                     </div>
                                     <div className="infoName">성별</div>
                                     <div>{gender()}</div>
@@ -143,16 +260,20 @@ const Mypage = () => {
                                         <input
                                             className="salaryInput"
                                             type="number"
+                                            name="salary"
                                             value={profile.salary}
+                                            onChange={changeProfile}
                                         />
-                                        만원
+                                        원
                                     </div>
                                     <div className="infoName">경력</div>
                                     <div>
                                         <input
                                             className="careerInput"
                                             type="number"
+                                            name="career"
                                             value={profile.career}
+                                            onChange={changeProfile}
                                         />
                                         년
                                     </div>
@@ -160,15 +281,21 @@ const Mypage = () => {
                                 <InfoContent>
                                     <div className="infoName">
                                         가르칠 과목
-                                        <button>+</button>
-                                        <button>-</button>
+                                        <Modal open={open} closeModal={closeModal}>
+                                            {subjectList()}
+                                        </Modal>
+                                        <button onClick={() => openModal()}>변경하기</button>
                                     </div>
                                     <div>{subject()}</div>
                                     <div className="infoName">선생님 소개</div>
                                 </InfoContent>
                                 <br />
                                 <TeacherIntroduce>
-                                    <textarea value={profile.introduce} />
+                                    <textarea
+                                        name="introduce"
+                                        value={profile.introduce}
+                                        onChange={changeProfile}
+                                    />
                                 </TeacherIntroduce>
                             </OptionalInfo>
                         </InfoBody>
@@ -180,7 +307,7 @@ const Mypage = () => {
                 </InfoBox>
             </StyledMypage>
         </HomeLayout>
-    );
+    ) : null;
 };
 const StyledMypage = styled.div`
     margin: auto;
@@ -204,6 +331,9 @@ const StyledMypage = styled.div`
         background: rgba(0, 0, 0, 0.001);
         outline: none;
         box-shadow: 0 2px 0 ${({ theme }) => theme.PRIMARY};
+    }
+    input[type='file'] {
+        display: none;
     }
 `;
 const InfoBox = styled.div`
@@ -278,6 +408,13 @@ const InfoName = styled.div`
     font-weight: 500;
 `;
 const InfoContent = styled.div`
+    .isSelected {
+        background-color: ${({ theme }) => theme.PRIMARY};
+        color: ${({ theme }) => theme.WHITE};
+        &:hover {
+            background-color: ${({ theme }) => theme.PRIMARY_LIGHT};
+        }
+    }
     div {
         padding: 0.5em 1em;
     }
@@ -295,13 +432,14 @@ const InfoContent = styled.div`
         border-radius: 0.4em;
     }
     button {
-        margin: 0 0.2em;
-        width: 18px;
-        height: 18px;
+        margin: 0 2em;
+        padding: 0.2em 0.5em;
+        // width: 18px;
+        // height: 18px;
         background-color: ${({ theme }) => theme.PRIMARY_LIGHT};
         color: ${({ theme }) => theme.WHITE};
         font-weight: bold;
-        border-radius: 70%;
+        border-radius: 0.4em;
         &:hover {
             background-color: ${({ theme }) => theme.PRIMARY};
         }
@@ -333,6 +471,9 @@ const TeacherInfo = styled.div`
         flex-basis: 25%;
         padding: 0 0.5em;
     }
+    .selected {
+        background-color: ${({ theme }) => theme.PRIMARY};
+    }
     span {
         padding: 0 0.3em;
         background-color: ${({ theme }) => theme.PRIMARY_LIGHT};
@@ -346,7 +487,7 @@ const TeacherInfo = styled.div`
         max-width: 1.5em;
     }
     input {
-        max-width: 2.5em;
+        max-width: 4em;
         text-align: center;
     }
     /* Chrome, Safari, Edge, Opera */
