@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, JSX } from 'react';
 import styled from 'styled-components';
 import HomeLayout from '@/components/layouts/HomeLayout';
 import { IUserInfo, IUserRole } from '@/apis/user/user';
 import axios from 'axios';
-import Modal from '@/components/commons/Modal';
+import Close from '@/components/icons/Close';
 import { useRecoilValue } from 'recoil';
 import userSessionAtom from '@/recoil/atoms/userSession';
 import router from 'next/router';
@@ -13,11 +13,9 @@ import { subjectDefaultOptions } from '@/components/FilterOpenTeacherList/filter
 import { useModal } from '@/hooks/useModal';
 
 const path = '/members';
-const Mypage = () => {
+const updatePage = () => {
     const userSession = useRecoilValue(userSessionAtom);
     const { open, openModal, closeModal } = useModal();
-
-    const [name, setName] = useState<number>(1);
     const [profile, setProfile] = useState<any>({
         name: '',
         school: '',
@@ -33,11 +31,23 @@ const Mypage = () => {
         subjects: [],
         introduce: '',
     }); // role에 따라서 student 담거나, teacher 담거나
+    const profileName: any = {
+        name: '이름',
+        school: '학교',
+        grade: '학년',
+        phone: '전화번호',
+        profileUrl: '프로필 사진',
+        college: '대학교', // 여기부터 선생님의 정보
+        collegeEmail: '이메일',
+        profileStatus: '프로필 공개 여부',
+        gender: '성별',
+        salary: '예상 과외비',
+        career: '경력',
+        subjects: '과외 과목',
+        introduce: '선생님 소개',
+    };
 
     const [role, setRole] = useState<IUserRole>(); // STUDENT or TEACHER
-    useEffect(() => {
-        console.log(profile);
-    }, [profile]);
 
     useEffect(() => {
         setRole(userSession?.role);
@@ -83,7 +93,7 @@ const Mypage = () => {
         else return false;
     };
 
-    const changeProfile = (e) => {
+    const changeProfile = (e: { target: { name: any; value: any } }) => {
         setProfile((prev: any) => {
             return {
                 ...prev,
@@ -129,15 +139,49 @@ const Mypage = () => {
             ...prev,
             subjects: updatedSubjects,
         }));
-        console.log(updatedSubjects.length);
     };
 
     const submit = () => {
         console.log(profile);
+        if (
+            userSession?.role == 'STUDENT' ||
+            (userSession?.role == 'TEACHER' && profile.profileStatus)
+        ) {
+            // eslint-disable-next-line prefer-const
+            for (let key in profile) {
+                console.log(key, ':', profile[key]);
+                if (
+                    profile[key] === '' ||
+                    profile[key] === 0 ||
+                    (Array.isArray(profile[key]) && profile[key].length == 0)
+                ) {
+                    alert(`${profileName[key]} 정보를 입력해주세요`);
+                    return;
+                }
+            }
+        } else {
+            if (profile.name === '') {
+                alert('이름 정보를 입력해주세요');
+                return;
+            }
+            if (profile.phone === '') {
+                alert('전화번호를 입력해주세요');
+                return;
+            }
+        }
+        if (userSession?.role == 'STUDENT') {
+            axios
+                .put(`${process.env.NEXT_PUBLIC_API_SERVER}/members/students`, profile)
+                .catch((e) => console.log(e));
+        } else {
+            axios
+                .put(`${process.env.NEXT_PUBLIC_API_SERVER}/members/teachers`, profile)
+                .catch((e) => console.log(e));
+        }
     };
 
     const subjectList = () => {
-        const result = [];
+        const result: JSX.Element[] = [];
         // for (let i = 0; i < profile.subjects.length; i++) {
         //     result.push(<span key={i}>{profile.subjects[i].name}</span>);
         // }
@@ -281,9 +325,18 @@ const Mypage = () => {
                                 <InfoContent>
                                     <div className="infoName">
                                         가르칠 과목
-                                        <Modal open={open} closeModal={closeModal}>
-                                            {subjectList()}
-                                        </Modal>
+                                        <StyledModal open={open}>
+                                            <ModalBackground open={open} onClick={closeModal} />
+                                            <ModalWrapper>
+                                                <SubjectList>{subjectList()}</SubjectList>
+                                                <br />
+                                                <br />
+                                                <br />
+                                                <ModalCloseButton onClick={closeModal}>
+                                                    변경 완료
+                                                </ModalCloseButton>
+                                            </ModalWrapper>
+                                        </StyledModal>
                                         <button onClick={() => openModal()}>변경하기</button>
                                     </div>
                                     <div>{subject()}</div>
@@ -434,8 +487,6 @@ const InfoContent = styled.div`
     button {
         margin: 0 2em;
         padding: 0.2em 0.5em;
-        // width: 18px;
-        // height: 18px;
         background-color: ${({ theme }) => theme.PRIMARY_LIGHT};
         color: ${({ theme }) => theme.WHITE};
         font-weight: bold;
@@ -540,4 +591,69 @@ const Button = styled.div`
     justify-content: space-around;
     width: 30%;
 `;
-export default Mypage;
+
+const StyledModal = styled.div<{ open: boolean }>`
+    ${({ open }) => !open && `display:none;`}
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 100;
+`;
+
+const ModalWrapper = styled.div`
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+`;
+
+const ModalBackground = styled.div<{ open: boolean }>`
+    ${({ open }) => !open && `display:none;`}
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 70%;
+    background-color: #e3e3e3;
+    border-radius: 2em;
+`;
+
+const ModalCloseButton = styled.button`
+    width: 20%;
+    min-width: 8em;
+    min-height: 2.5em;
+    padding: 3em;
+    background-color: ${({ theme }) => theme.PRIMARY_LIGHT};
+    color: ${({ theme }) => theme.WHITE};
+    font-weight: bold;
+    border-radius: 0.4em;
+    &:hover {
+        background-color: ${({ theme }) => theme.PRIMARY};
+    }
+    text-align: center;
+`;
+
+const SubjectList = styled.div`
+    .selected {
+        background-color: ${({ theme }) => theme.PRIMARY};
+        color: ${({ theme }) => theme.WHITE};
+    }
+    span {
+        margin: 0.5em;
+        background-color: ${({ theme }) => theme.WHITE};
+        color: ${({ theme }) => theme.DARK_BLACK};
+        &:hover {
+            background-color: ${({ theme }) => theme.PRIMARY_LIGHT};
+            color: ${({ theme }) => theme.WHITE};
+        }
+        text-align: center;
+    }
+    text-align: center;
+`;
+export default updatePage;
