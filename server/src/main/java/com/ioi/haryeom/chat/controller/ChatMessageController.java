@@ -24,13 +24,13 @@ public class ChatMessageController {
     @MessageMapping("/chatroom/{chatRoomId}/connect")
     public void connectChatRoom(@DestinationVariable Long chatRoomId, SimpMessageHeaderAccessor headerAccessor, @AuthMemberId Long memberId) {
         String sessionId = headerAccessor.getSessionId();
-        log.info("[CONNECT CHAT ROOM] CHAT ROOM ID : {}, session ID : {}", chatRoomId, sessionId);
+        log.info("[CONNECT CHAT ROOM] CHAT ROOM ID : {}, SESSION ID : {}", chatRoomId, sessionId);
         chatMessageService.connectChatRoom(chatRoomId, sessionId, memberId);
     }
 
     @EventListener
     public void disconnectChatRoom(SessionDisconnectEvent event) {
-        log.info("[DISCONNECT CHAT ROOM] CHAT ROOM session ID : {}", event.getSessionId());
+        log.info("[DISCONNECT CHAT ROOM] CHAT ROOM SESSION ID : {}", event.getSessionId());
         chatMessageService.disconnectChatRoom(event.getSessionId());
     }
 
