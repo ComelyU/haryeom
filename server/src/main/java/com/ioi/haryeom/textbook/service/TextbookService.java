@@ -16,14 +16,30 @@ import com.ioi.haryeom.member.repository.TeacherRepository;
 import com.ioi.haryeom.member.repository.TeacherSubjectRepository;
 import com.ioi.haryeom.textbook.domain.Assignment;
 import com.ioi.haryeom.textbook.domain.Textbook;
-import com.ioi.haryeom.textbook.dto.*;
-import com.ioi.haryeom.textbook.exception.*;
+import com.ioi.haryeom.textbook.dto.TextbookListByTutoringResponse;
+import com.ioi.haryeom.textbook.dto.TextbookRequest;
+import com.ioi.haryeom.textbook.dto.TextbookResponse;
+import com.ioi.haryeom.textbook.dto.TextbookWithStudentsResponse;
+import com.ioi.haryeom.textbook.exception.AssignStudentNotFoundException;
+import com.ioi.haryeom.textbook.exception.AssignmentNotFoundException;
+import com.ioi.haryeom.textbook.exception.FileValidationException;
+import com.ioi.haryeom.textbook.exception.RegisteredTextbookNotFoundException;
+import com.ioi.haryeom.textbook.exception.SelectedTextbookNotFoundException;
+import com.ioi.haryeom.textbook.exception.TextbookNotFoundException;
 import com.ioi.haryeom.textbook.repository.AssignmentRespository;
 import com.ioi.haryeom.textbook.repository.TextbookRepository;
 import com.ioi.haryeom.tutoring.domain.Tutoring;
 import com.ioi.haryeom.tutoring.domain.TutoringStatus;
 import com.ioi.haryeom.tutoring.exception.TutoringNotFoundException;
 import com.ioi.haryeom.tutoring.repository.TutoringRepository;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.imageio.ImageIO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -35,12 +51,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional
@@ -70,7 +80,7 @@ public class TextbookService {
 
             // 파일 Validation
             String fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1);
-            if(!allowedExtensions.contains(fileExtension)) {
+            if (!allowedExtensions.contains(fileExtension)) {
                 throw new FileValidationException(allowedExtensions);
             }
 
@@ -84,12 +94,12 @@ public class TextbookService {
             String coverImg = null;
             int totalPage = document.getNumberOfPages();
 
-            if(request.isFirstPageCover() == true){
+            if (request.isFirstPageCover() == true) {
                 PDFRenderer pdfRenderer = new PDFRenderer(document);
                 // 0번 인덱스 가져오기(표지)
                 PDPage firstPage = document.getPage(0);
                 // 이미지 해상도 설정
-                int dpi =300;
+                int dpi = 300;
                 BufferedImage image = pdfRenderer.renderImageWithDPI(0, dpi);
 
                 // BufferedImage 를 InputStream 으로 변환
@@ -128,12 +138,13 @@ public class TextbookService {
                     String[] words = request.getTextbookName().split(" ");
                     StringBuilder line = new StringBuilder();
                     float startX = MARGIN;
-                    float startY = pageHeight - MARGIN - FONT_SIZE*5;
+                    float startY = pageHeight - MARGIN - FONT_SIZE * 5;
 
-                    for(String word : words) {
+                    for (String word : words) {
                         float wordWidth = font.getStringWidth(line + word + " ") / 1000 * FONT_SIZE;
-                        if(startX + wordWidth < pageWidth - MARGIN) line.append(word).append(" ");
-                        else {
+                        if (startX + wordWidth < pageWidth - MARGIN) {
+                            line.append(word).append(" ");
+                        } else {
                             float lineWidth = font.getStringWidth(line.toString()) / 1000 * FONT_SIZE;
                             float centerX = (pageWidth - lineWidth) / 2;
 
@@ -147,7 +158,7 @@ public class TextbookService {
                         }
                     }
 
-                    if(line.length() > 0) {
+                    if (line.length() > 0) {
                         float lineWidth = font.getStringWidth(line.toString()) / 1000 * FONT_SIZE;
                         float centerX = (pageWidth - lineWidth) / 2;
                         contentStream.beginText();
@@ -176,25 +187,29 @@ public class TextbookService {
                     is.close();
 
                 } finally {
-                    if(doc != null) doc.close();
+                    if (doc != null) {
+                        doc.close();
+                    }
                     document.close();
                 }
             }
 
             Member teacherMember = findMemberById(teacherMemberId);
-            if(teacherMember == null) throw new RuntimeException("선생님이없어요");
+            if (teacherMember == null) {
+                throw new RuntimeException("선생님이없어요");
+            }
             Subject subject = subjectRepository.findById(request.getSubjectId())
-                    .orElseThrow(() -> new SubjectNotFoundException(request.getSubjectId()));
+                .orElseThrow(() -> new SubjectNotFoundException(request.getSubjectId()));
 
             Textbook textbook = Textbook.builder()
-                    .teacherMember(teacherMember)
-                    .subject(subject)
-                    .textbookName(request.getTextbookName())
-                    .textbookUrl(fileUrl)
-                    .firstPageCover(request.isFirstPageCover())
-                    .totalPage(totalPage)
-                    .coverImg(coverImg)
-                    .build();
+                .teacherMember(teacherMember)
+                .subject(subject)
+                .textbookName(request.getTextbookName())
+                .textbookUrl(fileUrl)
+                .firstPageCover(request.isFirstPageCover())
+                .totalPage(totalPage)
+                .coverImg(coverImg)
+                .build();
 
             Textbook savedTextbook = textbookRepository.save(textbook);
             return savedTextbook.getId();
@@ -208,15 +223,17 @@ public class TextbookService {
     // 과외별 학습자료 리스트 조회
     public List<TextbookListByTutoringResponse> getTextbookListByTutoring(Long tutoringId) {
         Tutoring tutoring = tutoringRepository.findByIdAndStatus(tutoringId, TutoringStatus.IN_PROGRESS)
-                .orElseThrow(() -> new TutoringNotFoundException(tutoringId));
+            .orElseThrow(() -> new TutoringNotFoundException(tutoringId));
 
         List<Assignment> assignments = assignmentRespository.findByTutoringId(tutoring.getId());
-        if(assignments.size() == 0) throw new SelectedTextbookNotFoundException(tutoringId);
+        if (assignments.size() == 0) {
+            throw new SelectedTextbookNotFoundException(tutoringId);
+        }
         return assignments.stream()
-                .map(Assignment::getTextbook)
-                .distinct()
-                .map(TextbookListByTutoringResponse::new)
-                .collect(Collectors.toList());
+            .map(Assignment::getTextbook)
+            .distinct()
+            .map(TextbookListByTutoringResponse::new)
+            .collect(Collectors.toList());
     }
 
     // 학습자료 불러오기
@@ -227,11 +244,11 @@ public class TextbookService {
 
     // 학습자료 삭제
     public void deleteTextbook(List<Long> textbookIds, Long teacherMemberId) {
-        for(Long textbookId : textbookIds){
+        for (Long textbookId : textbookIds) {
             Textbook textbook = findTextbookById(textbookId);
             Member teacherMember = memberRepository.findById(teacherMemberId)
-                    .orElseThrow(() -> new MemberNotFoundException(teacherMemberId));
-            if(textbook.getTeacherMember() != teacherMember) {
+                .orElseThrow(() -> new MemberNotFoundException(teacherMemberId));
+            if (textbook.getTeacherMember() != teacherMember) {
                 throw new RuntimeException("해당 학습자료를 등록한 선생님이 아닙니다.");
             }
 
@@ -244,39 +261,43 @@ public class TextbookService {
 //        if(memberId != teacherMemberId) throw new NoTeacherException();
 
         Member teacherMember = memberRepository.findById(memberId)
-                .orElseThrow(() -> new MemberNotFoundException(memberId));
+            .orElseThrow(() -> new MemberNotFoundException(memberId));
         List<Textbook> textbooks = textbookRepository.findAllByTeacherMemberAndIsDeletedFalse(teacherMember);
-        if(textbooks.size() == 0) throw new RegisteredTextbookNotFoundException(teacherMemberId);
+        if (textbooks.size() == 0) {
+            throw new RegisteredTextbookNotFoundException(teacherMemberId);
+        }
 
         return textbooks.stream().map(textbook -> {
             List<Assignment> assignments = assignmentRespository.findByTextbook(textbook);
             List<TextbookWithStudentsResponse.StudentInfo> studentInfos = assignments.stream()
-                    .map(assignment -> assignment.getTutoring().getStudent())
-                    .map(TextbookWithStudentsResponse.StudentInfo::new)
-                    .collect(Collectors.toList());
+                .map(assignment -> assignment.getTutoring().getStudentMember())
+                .map(TextbookWithStudentsResponse.StudentInfo::new)
+                .collect(Collectors.toList());
             return new TextbookWithStudentsResponse(textbook, studentInfos);
         }).collect(Collectors.toList());
     }
 
     // 학습자료별 지정 가능 학생 리스트 조회
-    public List<TextbookWithStudentsResponse.StudentInfo> getAssignableStudent(Long textbookId,Long teacherMemberId) {
+    public List<TextbookWithStudentsResponse.StudentInfo> getAssignableStudent(Long textbookId, Long teacherMemberId) {
 
-        List<Tutoring> tutorings = tutoringRepository.findAllByTeacherIdAndStatus(teacherMemberId, TutoringStatus.IN_PROGRESS);
+        List<Tutoring> tutorings = tutoringRepository.findAllByTeacherMemberIdAndStatus(teacherMemberId, TutoringStatus.IN_PROGRESS);
 
         Textbook currentTextbook = findTextbookById(textbookId);
         List<Assignment> currentAssignments = assignmentRespository.findByTextbook(currentTextbook);
         List<Long> assignedStudentIds = currentAssignments.stream()
-                .map(assignment -> assignment.getTutoring().getStudent().getId())
-                .collect(Collectors.toList());
+            .map(assignment -> assignment.getTutoring().getStudentMember().getId())
+            .collect(Collectors.toList());
 
         List<TextbookWithStudentsResponse.StudentInfo> assignableStudents = tutorings.stream()
-                .map(Tutoring::getStudent)
-                .filter(student -> !assignedStudentIds.contains(student.getId()))
-                .distinct()
-                .map(TextbookWithStudentsResponse.StudentInfo::new)
-                .collect(Collectors.toList());
+            .map(Tutoring::getStudentMember)
+            .filter(student -> !assignedStudentIds.contains(student.getId()))
+            .distinct()
+            .map(TextbookWithStudentsResponse.StudentInfo::new)
+            .collect(Collectors.toList());
 
-        if(assignableStudents.isEmpty()) throw new AssignStudentNotFoundException();
+        if (assignableStudents.isEmpty()) {
+            throw new AssignStudentNotFoundException();
+        }
 
         return assignableStudents;
     }
@@ -285,13 +306,13 @@ public class TextbookService {
     public void putAssignment(Long textbookId, List<Long> studentMemberIds, Long teacherMemberId) {
         Textbook textbook = findTextbookById(textbookId);
 
-        for(Long studentMemberId : studentMemberIds) {
-            Tutoring tutoring = tutoringRepository.findAllByTeacherIdAndStudentId(teacherMemberId, studentMemberId);
+        for (Long studentMemberId : studentMemberIds) {
+            Tutoring tutoring = tutoringRepository.findAllByTeacherMemberIdAndStudentMemberId(teacherMemberId, studentMemberId);
 
             Assignment assignment = Assignment.builder()
-                    .tutoring(tutoring)
-                    .textbook(textbook)
-                    .build();
+                .tutoring(tutoring)
+                .textbook(textbook)
+                .build();
 
             assignmentRespository.save(assignment);
         }
@@ -301,26 +322,30 @@ public class TextbookService {
     public List<SubjectInfo> getTeacherSubjects(Long teacherMemberId) {
 
         Member teacherMember = memberRepository.findById(teacherMemberId)
-                .orElseThrow(() -> new MemberNotFoundException(teacherMemberId));
+            .orElseThrow(() -> new MemberNotFoundException(teacherMemberId));
         Teacher teacher = teacherRepository.findByMember(teacherMember)
-                .orElseThrow(() -> new NoTeacherException());
+            .orElseThrow(() -> new NoTeacherException());
 
         return teacherSubjectRepository
-                .findByTeacherId(teacher.getId())
-                .stream()
-                .map(TeacherSubject::getSubject)
-                .map(SubjectInfo::from)
-                .collect(Collectors.toList());
+            .findByTeacherId(teacher.getId())
+            .stream()
+            .map(TeacherSubject::getSubject)
+            .map(SubjectInfo::from)
+            .collect(Collectors.toList());
     }
 
     // 학습자료 학생 지정 해제
     public void deleteAssignment(Long textbookId, List<Long> studentMemberIds, Long teacherMemberId) {
 
-        for(Long studentMemberId : studentMemberIds){
-            Tutoring tutoring = tutoringRepository.findAllByTeacherIdAndStudentId(teacherMemberId, studentMemberId);
-            if(tutoring == null) throw new TutoringNotFoundException(tutoring.getId());
+        for (Long studentMemberId : studentMemberIds) {
+            Tutoring tutoring = tutoringRepository.findAllByTeacherMemberIdAndStudentMemberId(teacherMemberId, studentMemberId);
+            if (tutoring == null) {
+                throw new TutoringNotFoundException(tutoring.getId());
+            }
             Assignment assignment = assignmentRespository.findByTextbookIdAndTutoringId(textbookId, tutoring.getId());
-            if(assignment == null) throw new AssignmentNotFoundException();
+            if (assignment == null) {
+                throw new AssignmentNotFoundException();
+            }
 
             assignmentRespository.deleteById(assignment.getId());
         }
@@ -328,11 +353,11 @@ public class TextbookService {
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(() -> new MemberNotFoundException(memberId));
+            .orElseThrow(() -> new MemberNotFoundException(memberId));
     }
 
     private Textbook findTextbookById(Long textbookId) {
         return textbookRepository.findByIdAndIsDeletedFalse(textbookId)
-                .orElseThrow(() -> new TextbookNotFoundException(textbookId));
+            .orElseThrow(() -> new TextbookNotFoundException(textbookId));
     }
 }

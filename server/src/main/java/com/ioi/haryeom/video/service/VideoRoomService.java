@@ -65,8 +65,8 @@ public class VideoRoomService {
 
     private void isMemberValid(Optional<TutoringSchedule> tutoringScheduleOptional, Long memberId) {
         TutoringSchedule tutoringSchedule = tutoringScheduleOptional.get();
-        Long studentId = tutoringSchedule.getTutoring().getStudent().getId();
-        Long teacherId = tutoringSchedule.getTutoring().getTeacher().getId();
+        Long studentId = tutoringSchedule.getTutoring().getStudentMember().getId();
+        Long teacherId = tutoringSchedule.getTutoring().getTeacherMember().getId();
         log.info("[GET VIDEO ROOM] memberId : {}, studentMemberId : {}, teacherMemberId : {}", memberId, studentId, teacherId);
         if (!Objects.equals(memberId, studentId) && !Objects.equals(memberId, teacherId)) {
             throw new AuthorizationException(memberId);

@@ -81,7 +81,7 @@ public class ReviewService {
         }
 
         Subject subject = tutoring.getSubject();
-        Member teacherMember = tutoring.getTeacher();
+        Member teacherMember = tutoring.getTeacherMember();
 
         List<VideoTimestamp> videoTimestampList = videoTimestampRepository.findAllByVideo(video);
 
