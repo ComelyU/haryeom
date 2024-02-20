@@ -36,7 +36,6 @@ public class TeacherCustomRepositoryImpl implements TeacherCustomRepository {
                 goeMinCareer(minCareer),
                 loeMaxSalary(maxSalary)
             )
-            .groupBy(teacher.id)
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
             .orderBy(teacher.createdAt.desc())

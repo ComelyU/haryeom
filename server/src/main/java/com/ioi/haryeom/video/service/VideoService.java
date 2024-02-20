@@ -133,7 +133,7 @@ public class VideoService {
 
     private void validateTutoringTeacher(Long memberId, TutoringSchedule tutoringSchedule) {
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new MemberNotFoundException(memberId));
-        Member teacherMember = tutoringSchedule.getTutoring().getTeacher();
+        Member teacherMember = tutoringSchedule.getTutoring().getTeacherMember();
         if (!teacherMember.equals(member)) {
             throw new UnauthorizedTeacherAccessException(teacherMember.getId(), member.getId());
         }

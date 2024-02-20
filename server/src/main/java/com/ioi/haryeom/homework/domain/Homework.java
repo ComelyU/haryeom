@@ -88,6 +88,6 @@ public class Homework extends BaseTimeEntity {
     }
 
     public boolean isOwner(Member member) {
-        return tutoring.getTeacher().equals(member);
+        return tutoring.getTeacherMember().equals(member);
     }
 }
