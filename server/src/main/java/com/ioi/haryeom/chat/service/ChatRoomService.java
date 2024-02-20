@@ -206,7 +206,7 @@ public class ChatRoomService {
         String lastReadMessageId = chatRoomState.getLastReadMessageId();
         ChatRoom chatRoom = chatRoomState.getChatRoom();
 
-        ChatMessage lastChatMessage = chatMessageRepository.findFirstByChatRoomIdOrderByCreatedAtDesc(chatRoom.getId());
+        ChatMessage lastChatMessage = chatMessageRepository.findFirstByChatRoomIdOrderByIdDesc(chatRoom.getId());
         Integer unreadMessageCount = chatMessageRepository.countAllByChatRoomIdAndIdGreaterThan(chatRoom.getId(), new ObjectId(lastReadMessageId));
         Member oppositeMember = chatRoom.getOppositeMember(member);
 

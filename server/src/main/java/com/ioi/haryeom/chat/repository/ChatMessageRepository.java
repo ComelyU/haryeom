@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatMessageRepository extends MongoRepository<ChatMessage, ObjectId> {
 
-    ChatMessage findFirstByChatRoomIdOrderByCreatedAtDesc(Long chatRoomId);
+    ChatMessage findFirstByChatRoomIdOrderByIdDesc(Long chatRoomId);
 
     Integer countAllByChatRoomIdAndIdGreaterThan(Long chatRoomId, ObjectId lastReadMessageId);
 
