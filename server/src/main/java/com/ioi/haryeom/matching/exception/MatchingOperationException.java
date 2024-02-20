@@ -1,4 +1,4 @@
-package com.ioi.haryeom.auth.exception;
+package com.ioi.haryeom.matching.exception;
 
 public class MatchingOperationException extends RuntimeException {
 
