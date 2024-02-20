@@ -30,8 +30,7 @@ public class Student {
     private String school;
 
     @Builder
-    public Student(Long id, Member member, String grade, String school) {
-        this.id = id;
+    public Student(Member member, String grade, String school) {
         this.member = member;
         this.grade = grade;
         this.school = school;

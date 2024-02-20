@@ -9,7 +9,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,12 +22,6 @@ public class Member extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @OneToOne(mappedBy = "member")
-    private Student student;
-
-    @OneToOne(mappedBy = "member")
-    private Teacher teacher;
 
     @Enumerated(EnumType.STRING)
     private Role role = Role.GUEST;
@@ -45,11 +38,9 @@ public class Member extends BaseTimeEntity {
     private String phone;
 
     @Builder
-    public Member(Long id, Student student, Teacher teacher, Role role, MemberStatus status,
+    public Member(Long id, Role role, MemberStatus status,
         String oauthId, String profileUrl, String name, String phone) {
         this.id = id;
-        this.student = student;
-        this.teacher = teacher;
         this.role = role;
         this.status = status;
         this.oauthId = oauthId;
@@ -58,36 +49,21 @@ public class Member extends BaseTimeEntity {
         this.phone = phone;
     }
 
-    public void createStudent(Student student, Role role, String profileUrl, String name,
+    public void create(Role role, String profileUrl, String name,
         String phone) {
-        this.student = student;
         this.role = role;
         this.profileUrl = profileUrl;
         this.name = name;
         this.phone = phone;
     }
 
-    public void updateStudent(String profileUrl, String name,
+    public void update(String profileUrl, String name,
         String phone) {
         this.profileUrl = profileUrl;
         this.name = name;
         this.phone = phone;
     }
 
-    public void createTeacher(Teacher teacher, Role role, String profileUrl, String name,
-        String phone) {
-        this.teacher = teacher;
-        this.role = role;
-        this.profileUrl = profileUrl;
-        this.name = name;
-        this.phone = phone;
-    }
-
-    public void updateTeacher(String profileUrl, String name, String phone) {
-        this.profileUrl = profileUrl;
-        this.name = name;
-        this.phone = phone;
-    }
 
     public void delete() {
         this.status = MemberStatus.DELETED;

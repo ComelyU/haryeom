@@ -20,7 +20,9 @@ import com.ioi.haryeom.member.dto.TeacherInfoResponse;
 import com.ioi.haryeom.member.dto.TeacherRequest;
 import com.ioi.haryeom.member.exception.EmailCertifyException;
 import com.ioi.haryeom.member.exception.MemberNotFoundException;
+import com.ioi.haryeom.member.exception.StudentNotFoundException;
 import com.ioi.haryeom.member.exception.SubjectNotFoundException;
+import com.ioi.haryeom.member.exception.TeacherNotFoundException;
 import com.ioi.haryeom.member.repository.MemberRepository;
 import com.ioi.haryeom.member.repository.StudentRepository;
 import com.ioi.haryeom.member.repository.TeacherRepository;
@@ -122,7 +124,7 @@ public class MemberService {
                 .school(studentRequest.getSchool())
                 .build();
 
-            member.createStudent(student, Role.STUDENT, profileUrl,
+            member.create(Role.STUDENT, profileUrl,
                 studentRequest.getName(), studentRequest.getPhone());
 
             studentRepository.save(student);
@@ -134,33 +136,35 @@ public class MemberService {
     }
 
     public StudentInfoResponse getStudent(Long memberId) {
+
         Member member = findMemberById(memberId);
+        Student student = findStudentByMember(member);
+
         return StudentInfoResponse.builder()
             .profileUrl(member.getProfileUrl())
             .name(member.getName())
             .phone(member.getPhone())
-            .grade(member.getStudent().getGrade())
-            .school(member.getStudent().getSchool())
+            .grade(student.getGrade())
+            .school(student.getSchool())
             .build();
     }
 
     @Transactional
-    public void updateStudent(Long userId, MultipartFile profileImg,
+    public void updateStudent(Long memberId, MultipartFile profileImg,
         StudentRequest studentRequest) {
         try {
-            Member member = findMemberById(userId);
+            Member member = findMemberById(memberId);
 
             String profileUrl = member.getProfileUrl();
             if (profileImg != null && profileImg.getSize() != 0) {
-                profileUrl = s3Upload.uploadFile(String.valueOf(userId),
+                profileUrl = s3Upload.uploadFile(String.valueOf(memberId),
                     profileImg.getInputStream(), profileImg.getSize(), profileImg.getContentType());
             }
 
-            Student student = member.getStudent();
-
+            Student student = findStudentByMember(member);
             student.updateStudent(studentRequest.getGrade(), studentRequest.getSchool());
 
-            member.updateStudent(profileUrl,
+            member.update(profileUrl,
                 studentRequest.getName(), studentRequest.getPhone());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -184,7 +188,6 @@ public class MemberService {
             }
 
             Teacher teacher = Teacher.builder()
-                .member(member)
                 .profileStatus(teacherRequest.getProfileStatus())
                 .college(teacherRequest.getCollege())
                 .collegeEmail(teacherRequest.getCollegeEmail())
@@ -194,7 +197,7 @@ public class MemberService {
                 .introduce(teacherRequest.getIntroduce())
                 .build();
 
-            member.createTeacher(teacher, Role.TEACHER, profileUrl,
+            member.create(Role.TEACHER, profileUrl,
                 teacherRequest.getName(), teacherRequest.getPhone());
             teacherRepository.save(teacher);
 
@@ -219,38 +222,39 @@ public class MemberService {
 
     public TeacherInfoResponse getTeacher(Long memberId) {
         Member member = findMemberById(memberId);
+        Teacher teacher = findTeacherByMember(member);
 
         return TeacherInfoResponse.builder()
             .profileUrl(member.getProfileUrl())
             .name(member.getName())
             .phone(member.getPhone())
-            .profileStatus(member.getTeacher().getProfileStatus())
-            .college(member.getTeacher().getCollege())
-            .collegeEmail(member.getTeacher().getCollegeEmail())
-            .gender(member.getTeacher().getGender())
-            .salary(member.getTeacher().getSalary())
-            .career(member.getTeacher().getCareer())
-            .subjects(findSubjectsById(member.getTeacher().getId()))
-            .introduce(member.getTeacher().getIntroduce())
+            .profileStatus(teacher.getProfileStatus())
+            .college(teacher.getCollege())
+            .collegeEmail(teacher.getCollegeEmail())
+            .gender(teacher.getGender())
+            .salary(teacher.getSalary())
+            .career(teacher.getCareer())
+            .subjects(findSubjectsById(teacher.getId()))
+            .introduce(teacher.getIntroduce())
             .build();
     }
 
     @Transactional
-    public void updateTeacher(Long userId, MultipartFile profileImg,
+    public void updateTeacher(Long memberId, MultipartFile profileImg,
         TeacherRequest teacherRequest) {
         try {
-            Member member = findMemberById(userId);
+            Member member = findMemberById(memberId);
 
             String profileUrl = member.getProfileUrl();
             if (profileImg != null && profileImg.getSize() != 0) {
-                profileUrl = s3Upload.uploadFile(String.valueOf(userId),
+                profileUrl = s3Upload.uploadFile(String.valueOf(memberId),
                     profileImg.getInputStream(), profileImg.getSize(), profileImg.getContentType());
             }
 
-            member.updateTeacher(profileUrl, teacherRequest.getName(),
+            member.update(profileUrl, teacherRequest.getName(),
                 teacherRequest.getPhone());
 
-            Teacher teacher = member.getTeacher();
+            Teacher teacher = findTeacherByMember(member);
 
             List<TeacherSubject> teacherSubjects = teacher.getTeacherSubjects();
 
@@ -302,5 +306,13 @@ public class MemberService {
             .map(TeacherSubject::getSubject)
             .map(SubjectInfo::from)
             .collect(Collectors.toList());
+    }
+
+    private Student findStudentByMember(Member member) {
+        return studentRepository.findByMember(member).orElseThrow(() -> new StudentNotFoundException(member.getId()));
+    }
+
+    private Teacher findTeacherByMember(Member member) {
+        return teacherRepository.findByMember(member).orElseThrow(() -> new TeacherNotFoundException(member.getId()));
     }
 }
