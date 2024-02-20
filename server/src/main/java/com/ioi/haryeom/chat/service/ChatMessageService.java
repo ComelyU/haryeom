@@ -37,9 +37,8 @@ public class ChatMessageService {
 
 
     private static final String SESSION_MEMBER_NAME = "websocket:session:member:";
-    private static final String SESSION_CHAT_ROOM_NAME = "websocket:session:chatRoom:";
-    private static final String CHAT_ROOM_MEMBER_NAME = "websocket:chatRoom:member:";
-
+    private static final String SESSION_CHAT_ROOM_NAME = "websocket:session:chatroom:";
+    private static final String CHAT_ROOM_MEMBER_NAME = "websocket:chatroom:member:";
     private static final String MATCHING_CHANNEL_NAME = "matching";
     private static final String CHAT_ROOM_CHANNEL_NAME = "chatroom";
     private final RedisTemplate<String, Object> redisTemplate;
@@ -75,7 +74,9 @@ public class ChatMessageService {
 
     @Transactional
     public void disconnectChatRoom(String sessionId) {
-        if(redisTemplate.opsForValue().get(SESSION_MEMBER_NAME + sessionId) == null) return;
+        if (redisTemplate.opsForValue().get(SESSION_MEMBER_NAME + sessionId) == null) {
+            return;
+        }
         Long memberId = Long.valueOf(Objects.requireNonNull(redisTemplate.opsForValue().get(SESSION_MEMBER_NAME + sessionId)).toString());
         Long chatRoomId = Long.valueOf(Objects.requireNonNull(redisTemplate.opsForValue().get(SESSION_CHAT_ROOM_NAME + sessionId)).toString());
         redisTemplate.delete(SESSION_MEMBER_NAME + sessionId);
@@ -85,7 +86,9 @@ public class ChatMessageService {
 
     @Transactional
     public void sendChatMessage(Long chatRoomId, String content, String sessionId, Long memberId) {
-
+        if (redisTemplate.opsForValue().get(SESSION_MEMBER_NAME + sessionId) == null) {
+            return;
+        }
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new MemberNotFoundException(memberId));
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId).orElseThrow(() -> new ChatRoomNotFoundException(chatRoomId));
 
