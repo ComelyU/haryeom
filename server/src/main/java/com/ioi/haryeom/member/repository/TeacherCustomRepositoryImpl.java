@@ -29,6 +29,7 @@ public class TeacherCustomRepositoryImpl implements TeacherCustomRepository {
 
         return queryFactory
             .selectFrom(teacher)
+            .distinct()
             .leftJoin(teacher.teacherSubjects, teacherSubject).fetchJoin()
             .leftJoin(teacherSubject.subject, subject).fetchJoin()
             .leftJoin(teacher.member, member).fetchJoin()
