@@ -83,8 +83,8 @@ public class VideoTimestampService {
         VideoTimestamp videoTimestamp = videoTimestampRepository.findById(videoTimestampId)
             .orElseThrow(() -> new VideoTimestampNotFoundException(videoTimestampId));
 
-        if (videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getStudent().getId() != memberId
-            && videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getTeacher().getId() != memberId) {
+        if (videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getStudentMember().getId() != memberId
+            && videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getTeacherMember().getId() != memberId) {
             throw new AuthorizationException(memberId);
         }
         LocalTime stampTime = parseStampTime(timestampRequest.getStampTime());
@@ -95,8 +95,8 @@ public class VideoTimestampService {
     public void deleteTimestamp(Long videoTimestampId, Long memberId) {
         VideoTimestamp videoTimestamp = videoTimestampRepository.findById(videoTimestampId)
             .orElseThrow(() -> new VideoTimestampNotFoundException(videoTimestampId));
-        if (videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getStudent().getId() != memberId
-            && videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getTeacher().getId() != memberId) {
+        if (videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getStudentMember().getId() != memberId
+            && videoTimestamp.getVideo().getTutoringSchedule().getTutoring().getTeacherMember().getId() != memberId) {
             throw new AuthorizationException(memberId);
         }
         videoTimestampRepository.delete(videoTimestamp);

@@ -20,12 +20,10 @@ import com.ioi.haryeom.matching.dto.RespondToMatchingRequest;
 import com.ioi.haryeom.matching.dto.RespondToMatchingResponse;
 import com.ioi.haryeom.matching.exception.DuplicateMatchingException;
 import com.ioi.haryeom.matching.exception.DuplicateTutoringException;
-import com.ioi.haryeom.matching.exception.InvalidSubjectForTeacherException;
 import com.ioi.haryeom.matching.exception.MatchingNotFoundException;
 import com.ioi.haryeom.matching.repository.MatchingRepository;
 import com.ioi.haryeom.matching.repository.MatchingResultRepository;
 import com.ioi.haryeom.member.domain.Member;
-import com.ioi.haryeom.member.domain.Teacher;
 import com.ioi.haryeom.member.exception.MemberNotFoundException;
 import com.ioi.haryeom.member.exception.SubjectNotFoundException;
 import com.ioi.haryeom.member.repository.MemberRepository;
@@ -188,8 +186,8 @@ public class MatchingService {
             .chatRoom(chatRoom)
             .subject(subject)
             .hourlyRate(matchingResult.getHourlyRate())
-            .student(chatRoom.getStudentMember())
-            .teacher(chatRoom.getTeacherMember())
+            .studentMember(chatRoom.getStudentMember())
+            .teacherMember(chatRoom.getTeacherMember())
             .build();
         Tutoring savedTutoring = tutoringRepository.save(tutoring);
 
@@ -212,7 +210,7 @@ public class MatchingService {
     private ChatMessage createEndTutoringMessage(Tutoring tutoring, Member member) {
 
         String endMessage = String.format("%s 선생님과 %s 학생의 %s 과외가 종료되었습니다.",
-            tutoring.getTeacher().getName(), tutoring.getStudent().getName(), tutoring.getSubject().getName());
+            tutoring.getTeacherMember().getName(), tutoring.getStudentMember().getName(), tutoring.getSubject().getName());
 
         return ChatMessage.builder()
             .chatRoomId(tutoring.getChatRoom().getId())
@@ -236,15 +234,8 @@ public class MatchingService {
         }
     }
 
-    private void validateSubjectForTeacher(ChatRoom chatRoom, Subject subject) {
-        Teacher teacher = chatRoom.getTeacherMember().getTeacher();
-        if (!teacherSubjectRepository.existsByTeacherAndSubject(teacher, subject)) {
-            throw new InvalidSubjectForTeacherException(subject.getId());
-        }
-    }
-
     private void validateDuplicateTutoring(ChatRoom chatRoom, Member studentMember, Subject subject) {
-        if (tutoringRepository.existsBySubjectAndStudentAndTeacherAndStatus(subject, studentMember, chatRoom.getTeacherMember(),
+        if (tutoringRepository.existsBySubjectAndStudentMemberAndTeacherMemberAndStatus(subject, studentMember, chatRoom.getTeacherMember(),
             TutoringStatus.IN_PROGRESS)) {
             throw new DuplicateTutoringException(subject.getId());
         }

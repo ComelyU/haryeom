@@ -4,7 +4,6 @@ import com.ioi.haryeom.matching.dto.MatchingTeacherRequest;
 import com.ioi.haryeom.matching.dto.TeacherDetailResponse;
 import com.ioi.haryeom.matching.dto.TeacherResponse;
 import com.ioi.haryeom.member.domain.Teacher;
-import com.ioi.haryeom.member.domain.TeacherSubject;
 import com.ioi.haryeom.member.exception.TeacherNotFoundException;
 import com.ioi.haryeom.member.repository.TeacherCustomRepository;
 import com.ioi.haryeom.member.repository.TeacherRepository;
@@ -40,11 +39,9 @@ public class MatchingTeacherService {
 
     public TeacherDetailResponse getTeacher(Long teacherId) {
 
-        Teacher teacher = teacherRepository.findById(teacherId)
+        Teacher teacher = teacherRepository.findByIdWithSubjects(teacherId)
             .orElseThrow(() -> new TeacherNotFoundException(teacherId));
 
-        List<TeacherSubject> teacherSubjects = teacherSubjectRepository.findByTeacherId(teacher.getId());
-
-        return TeacherDetailResponse.from(teacher, teacherSubjects);
+        return TeacherDetailResponse.from(teacher, teacher.getTeacherSubjects());
     }
 }

@@ -25,14 +25,16 @@ public class TutoringScheduleRepositoryCustomImpl implements TutoringScheduleRep
         return queryFactory
             .select(tutoringSchedule.scheduleDate)
             .from(tutoringSchedule)
-            .where(tutoringSchedule.tutoring.teacher.id.eq(teacherMemberId), tutoringSchedule.scheduleDate.year().eq(year), tutoringSchedule.scheduleDate.month().eq(month))
+            .where(tutoringSchedule.tutoring.teacherMember.id.eq(teacherMemberId), tutoringSchedule.scheduleDate.year().eq(year),
+                tutoringSchedule.scheduleDate.month().eq(month))
             .groupBy(tutoringSchedule.scheduleDate)
             .orderBy(tutoringSchedule.scheduleDate.asc())
             .fetch();
     }
 
     @Override
-    public List<TeacherTutoringScheduleQueryDSLResponse> getTutoringScheduleListByTeacherAndYearMonth(Long teacherMemberId, List<LocalDate> scheduleDates) {
+    public List<TeacherTutoringScheduleQueryDSLResponse> getTutoringScheduleListByTeacherAndYearMonth(Long teacherMemberId,
+        List<LocalDate> scheduleDates) {
         QTutoringSchedule tutoringSchedule = QTutoringSchedule.tutoringSchedule;
         QTutoring tutoring = QTutoring.tutoring;
         QSubject subject = QSubject.subject;
@@ -45,8 +47,8 @@ public class TutoringScheduleRepositoryCustomImpl implements TutoringScheduleRep
             .from(tutoringSchedule)
             .join(tutoringSchedule.tutoring, tutoring)
             .join(tutoring.subject, subject)
-            .join(tutoring.student, member)
-            .where(tutoringSchedule.tutoring.teacher.id.eq(teacherMemberId), tutoringSchedule.scheduleDate.in(scheduleDates))
+            .join(tutoring.studentMember, member)
+            .where(tutoringSchedule.tutoring.teacherMember.id.eq(teacherMemberId), tutoringSchedule.scheduleDate.in(scheduleDates))
             .orderBy(tutoringSchedule.scheduleDate.asc(), tutoringSchedule.startTime.asc())
             .fetch();
     }
@@ -58,14 +60,16 @@ public class TutoringScheduleRepositoryCustomImpl implements TutoringScheduleRep
         return queryFactory
             .select(tutoringSchedule.scheduleDate)
             .from(tutoringSchedule)
-            .where(tutoringSchedule.tutoring.student.id.eq(studentMemberId), tutoringSchedule.scheduleDate.year().eq(year), tutoringSchedule.scheduleDate.month().eq(month))
+            .where(tutoringSchedule.tutoring.studentMember.id.eq(studentMemberId), tutoringSchedule.scheduleDate.year().eq(year),
+                tutoringSchedule.scheduleDate.month().eq(month))
             .groupBy(tutoringSchedule.scheduleDate)
             .orderBy(tutoringSchedule.scheduleDate.asc())
             .fetch();
     }
 
     @Override
-    public List<StudentTutoringScheduleQueryDSLResponse> getTutoringScheduleListByStudentAndYearMonth(Long studentMemberId, List<LocalDate> scheduleDates) {
+    public List<StudentTutoringScheduleQueryDSLResponse> getTutoringScheduleListByStudentAndYearMonth(Long studentMemberId,
+        List<LocalDate> scheduleDates) {
         QTutoringSchedule tutoringSchedule = QTutoringSchedule.tutoringSchedule;
         QTutoring tutoring = QTutoring.tutoring;
         QSubject subject = QSubject.subject;
@@ -78,8 +82,8 @@ public class TutoringScheduleRepositoryCustomImpl implements TutoringScheduleRep
             .from(tutoringSchedule)
             .join(tutoringSchedule.tutoring, tutoring)
             .join(tutoring.subject, subject)
-            .join(tutoring.teacher, member)
-            .where(tutoringSchedule.tutoring.student.id.eq(studentMemberId), tutoringSchedule.scheduleDate.in(scheduleDates))
+            .join(tutoring.teacherMember, member)
+            .where(tutoringSchedule.tutoring.studentMember.id.eq(studentMemberId), tutoringSchedule.scheduleDate.in(scheduleDates))
             .orderBy(tutoringSchedule.scheduleDate.asc(), tutoringSchedule.startTime.asc())
             .fetch();
     }

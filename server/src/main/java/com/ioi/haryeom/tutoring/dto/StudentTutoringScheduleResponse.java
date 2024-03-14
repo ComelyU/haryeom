@@ -23,9 +23,9 @@ public class StudentTutoringScheduleResponse {
     public StudentTutoringScheduleResponse(TutoringSchedule tutoringSchedule) {
         this.tutoringScheduleId = tutoringSchedule.getId();
         this.tutoringId = tutoringSchedule.getTutoring().getId();
-        this.teacherMemberId = tutoringSchedule.getTutoring().getTeacher().getId();
-        this.teacherName = tutoringSchedule.getTutoring().getTeacher().getName();
-        this.teacherProfileUrl = tutoringSchedule.getTutoring().getTeacher().getProfileUrl();
+        this.teacherMemberId = tutoringSchedule.getTutoring().getTeacherMember().getId();
+        this.teacherName = tutoringSchedule.getTutoring().getTeacherMember().getName();
+        this.teacherProfileUrl = tutoringSchedule.getTutoring().getTeacherMember().getProfileUrl();
         this.subject = new SubjectResponse(tutoringSchedule.getTutoring().getSubject());
         this.startTime = tutoringSchedule.getStartTime();
         this.duration = tutoringSchedule.getDuration();

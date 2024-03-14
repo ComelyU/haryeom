@@ -1,18 +1,21 @@
 package com.ioi.haryeom.homework.controller;
 
-import com.ioi.haryeom.auth.dto.AuthInfo;
 import com.ioi.haryeom.common.util.AuthMemberId;
 import com.ioi.haryeom.homework.dto.HomeworkLoadResponse;
 import com.ioi.haryeom.homework.dto.HomeworkReviewResponse;
 import com.ioi.haryeom.homework.service.HomeworkService;
-import com.ioi.haryeom.member.domain.type.Role;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RequestMapping("/api/homework")
 @RequiredArgsConstructor
@@ -21,7 +24,6 @@ public class StudentHomeworkController {
 
     private final HomeworkService homeworkService;
 
-    AuthInfo authInfo = new AuthInfo(2L, Role.STUDENT.name());
 
     // 숙제 불러오기
     @GetMapping("/{homeworkId}")
@@ -41,7 +43,8 @@ public class StudentHomeworkController {
 
     // 숙제 저장(숙제 드로잉 저장)
     @PostMapping(value = "/{homeworkId}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<Void> saveHomework(@PathVariable Long homeworkId, @RequestPart("file") List<MultipartFile> file, @RequestPart("page") String page, @AuthMemberId Long memberId) {
+    public ResponseEntity<Void> saveHomework(@PathVariable Long homeworkId, @RequestPart("file") List<MultipartFile> file,
+        @RequestPart("page") String page, @AuthMemberId Long memberId) {
 
         homeworkService.saveHomework(homeworkId, file, page, memberId);
 
@@ -50,7 +53,8 @@ public class StudentHomeworkController {
 
     // 숙제 저장(복습 드로잉 저장)
     @PostMapping(value = "/{homeworkId}/review", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<Void> saveHomeworkReview(@PathVariable Long homeworkId, @RequestPart("file") List<MultipartFile> file, @RequestPart("page") String page, @AuthMemberId Long memberId) {
+    public ResponseEntity<Void> saveHomeworkReview(@PathVariable Long homeworkId, @RequestPart("file") List<MultipartFile> file,
+        @RequestPart("page") String page, @AuthMemberId Long memberId) {
 
         homeworkService.saveHomeworkReview(homeworkId, file, page, memberId);
 

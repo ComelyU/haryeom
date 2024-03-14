@@ -1,6 +1,8 @@
 package com.ioi.haryeom.member.repository;
 
 
+import static com.ioi.haryeom.common.domain.QSubject.subject;
+import static com.ioi.haryeom.member.domain.QMember.member;
 import static com.ioi.haryeom.member.domain.QTeacher.teacher;
 import static com.ioi.haryeom.member.domain.QTeacherSubject.teacherSubject;
 
@@ -27,7 +29,10 @@ public class TeacherCustomRepositoryImpl implements TeacherCustomRepository {
 
         return queryFactory
             .selectFrom(teacher)
-            .leftJoin(teacher.teacherSubjects, teacherSubject)
+            .distinct()
+            .leftJoin(teacher.teacherSubjects, teacherSubject).fetchJoin()
+            .leftJoin(teacherSubject.subject, subject).fetchJoin()
+            .leftJoin(teacher.member, member).fetchJoin()
             .where(
                 profileStatusTrue(),
                 inColleges(colleges),
@@ -36,12 +41,12 @@ public class TeacherCustomRepositoryImpl implements TeacherCustomRepository {
                 goeMinCareer(minCareer),
                 loeMaxSalary(maxSalary)
             )
-            .groupBy(teacher.id)
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
             .orderBy(teacher.createdAt.desc())
             .fetch();
     }
+
 
     private BooleanExpression profileStatusTrue() {
         return teacher.profileStatus.isTrue();

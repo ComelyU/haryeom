@@ -44,30 +44,30 @@ public class Tutoring extends BaseTimeEntity {
 
     @JoinColumn(name = "student_member_id")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Member student;
+    private Member studentMember;
 
     @JoinColumn(name = "teacher_member_id")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Member teacher;
+    private Member teacherMember;
 
 
     @Builder
-    public Tutoring(ChatRoom chatRoom, Subject subject, Integer hourlyRate, Member student, Member teacher) {
+    public Tutoring(ChatRoom chatRoom, Subject subject, Integer hourlyRate, Member studentMember, Member teacherMember) {
         this.chatRoom = chatRoom;
         this.subject = subject;
         this.hourlyRate = hourlyRate;
-        this.student = student;
-        this.teacher = teacher;
+        this.studentMember = studentMember;
+        this.teacherMember = teacherMember;
     }
 
     public void update(ChatRoom chatRoom, Subject subject, Integer hourlyRate,
-        TutoringStatus status, Member student, Member teacher) {
+        TutoringStatus status, Member studentMember, Member teacherMember) {
         this.chatRoom = chatRoom;
         this.subject = subject;
         this.hourlyRate = hourlyRate;
         this.status = status;
-        this.student = student;
-        this.teacher = teacher;
+        this.studentMember = studentMember;
+        this.teacherMember = teacherMember;
     }
 
     public void end() {
@@ -76,7 +76,7 @@ public class Tutoring extends BaseTimeEntity {
 
 
     public boolean isMemberPartOfTutoring(Member member) {
-        return (student.equals(member) || teacher.equals(member));
+        return (studentMember.equals(member) || teacherMember.equals(member));
     }
 
 }

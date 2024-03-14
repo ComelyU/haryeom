@@ -17,9 +17,9 @@ public class StudentTutoringResponse {
 
     public StudentTutoringResponse(Tutoring tutoring) {
         this.tutoringId = tutoring.getId();
-        this.teacherMemberId = tutoring.getTeacher().getId();
-        this.teacherName = tutoring.getTeacher().getName();
-        this.teacherProfileUrl = tutoring.getTeacher().getProfileUrl();
+        this.teacherMemberId = tutoring.getTeacherMember().getId();
+        this.teacherName = tutoring.getTeacherMember().getName();
+        this.teacherProfileUrl = tutoring.getTeacherMember().getProfileUrl();
         this.subject = new SubjectResponse(tutoring.getSubject());
     }
 }
